@@ -61,17 +61,7 @@ class Card:
         self.triggers = triggers
 
     def print_card(self):
-        print(self.name)
-        print(self.type)
-        print("Cost:", self.cost)
-        if self.tapped:
-            print("T")
-        else:
-            print("U")
-        if self.type == CardType.CREATURE:
-            print("P:", self.power)
-            print("T:", self.toughness)
-        print("Text:", self.text)
+        print(self.name, self.type, self.cost, "T" if self.tapped else "U", (self.power, self.toughness) if self.type == CardType.CREATURE else '')
 
 
 class Player:
@@ -216,8 +206,7 @@ for h in range(0,7):
 def print_player_hand(playerH):
     print(playerH.name,"'s hand")
     print_line_break()
-    for m in range(len(playerH.hand)):
-        print(m)
+    for m in range(0, len(playerH.hand)):
         print(playerH.hand[m].print_card())
 
 
