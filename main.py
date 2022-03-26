@@ -5,7 +5,6 @@ import random
 
 import numpy as np
 
-
 # Have an enum for each type of card
 import self as self
 
@@ -32,6 +31,22 @@ class DeckStrategy(enum.Enum):
 class Triggers(enum.Enum):
     NA = 0
     PROWESS = 1
+
+
+class GameState(enum.Enum):
+    UNTAP = 0
+    UPKEEP = 1
+    DRAW = 2
+    MAIN1 = 3
+    BEGINCOMBAT = 4
+    DECLAREATTACKERS = 5
+    DECLAREBLOCKERS = 6
+    FIRSTSTRIKEDAMAGE = 7
+    COMBATDAMAGE = 8
+    ENDCOMBAT = 9
+    MAIN2 = 10
+    ENDTURN = 11
+    CLOSING = 12
 
 
 class Card:
@@ -61,7 +76,8 @@ class Card:
         self.triggers = triggers
 
     def print_card(self):
-        return (self.name, self.type, self.cost, "T" if self.tapped else "U", (self.power, self.toughness) if self.type == CardType.CREATURE else '')
+        return (self.name, self.type, self.cost, "T" if self.tapped else "U",
+                (self.power, self.toughness) if self.type == CardType.CREATURE else '', self.text)
 
 
 class Player:
@@ -76,8 +92,18 @@ class Player:
         self.exile = []
         self.board = []
         self.life = 20
+        # Set mana in mana pool to 0 for each color
+        self.R = 0
+        self.W = 0
+        self.U = 0
+        self.B = 0
+        self.G = 0
+        self.C = 0
         self.opponentCardsInHandKnown = []
         self.opponentCardsInDeckKnown = []
+
+    def draw_card(self):
+        self.hand.append(self.deck.pop())
 
 
 # instantiate the Player class
@@ -86,13 +112,17 @@ play1 = Player("Lou")
 play2 = Player("Opponent")
 
 # Create some test cards
-lightningBolt = Card(CardType.INSTANT, 1, "R", "Lightning Bolt", False, DeckStrategy.OTHER, 0, 0, "Deal 3 damage to any target", Triggers.NA)
-monasterySwiftspear = Card(CardType.CREATURE, 1, "R", "Monastery Swiftspear", False, DeckStrategy.AGGRO, 1, 2, "Prowess", Triggers.PROWESS)
+lightningBolt = Card(CardType.INSTANT, 1, "R", "Lightning Bolt", False, DeckStrategy.OTHER, 0, 0,
+                     "Deal 3 damage to any target", Triggers.NA)
+monasterySwiftspear = Card(CardType.CREATURE, 1, "R", "Monastery Swiftspear", False, DeckStrategy.AGGRO, 1, 2,
+                           "Prowess", Triggers.PROWESS)
 mountain = Card(CardType.LAND, 0, "NA", "Mountain", False, DeckStrategy.AGGRO, 0, 0, "", Triggers.NA)
 
-llanowarElves = Card(CardType.CREATURE, 1, "G", "Llanowar Elves", False, DeckStrategy.MIDRANGE, 1, 1, "T, Add G", Triggers.NA)
+llanowarElves = Card(CardType.CREATURE, 1, "G", "Llanowar Elves", False, DeckStrategy.MIDRANGE, 1, 1, "T, Add G",
+                     Triggers.NA)
 forest = Card(CardType.LAND, 0, "NA", "Forest", False, DeckStrategy.MIDRANGE, 0, 0, "", Triggers.NA)
-preyUpon = Card(CardType.INSTANT, 1, "G", "Prey Upon", False, DeckStrategy.MIDRANGE, 0, 0, "Target creature you control fights target creature", Triggers.NA)
+preyUpon = Card(CardType.INSTANT, 1, "G", "Prey Upon", False, DeckStrategy.MIDRANGE, 0, 0,
+                "Target creature you control fights target creature", Triggers.NA)
 
 # Add the cards to the deck
 for i in range(0, 20):
@@ -170,7 +200,7 @@ elif answer == 2:
 else:
     print("That is not a valid response. Try again")
 
-flip = random.choice([1,2])
+flip = random.choice([1, 2])
 if flip == 1:
     print("The coin landed on heads")
 else:
@@ -196,7 +226,7 @@ print_line_break()
 
 tempCardA = copy.deepcopy(llanowarElves)
 tempCardB = copy.deepcopy(lightningBolt)
-for h in range(0,7):
+for h in range(0, 7):
     tempCardA = play1.deck.pop()
     play1.hand.append(tempCardA)
     tempCardB = play2.deck.pop()
@@ -204,7 +234,7 @@ for h in range(0,7):
 
 
 def print_player_hand(playerH):
-    print(playerH.name,"'s hand")
+    print(playerH.name, "'s hand")
     print_line_break()
     for m in range(0, len(playerH.hand)):
         print(playerH.hand[m].print_card())
@@ -220,11 +250,11 @@ yesorno = "Y"
 if play1.onThePlay:
     # Player 1 must choose first, loop through redraws until they have a hand they like
     while not keeping:
-        print("Do you want to keep your hand (Y or N),", play1.name,"?")
+        print("Do you want to keep your hand (Y or N),", play1.name, "?")
         yesorno = input()
         if yesorno == "Y":
             keeping = True
-        else: # Put cards from hand back into deck, shuffle deck, draw seven again
+        else:  # Put cards from hand back into deck, shuffle deck, draw seven again
             put_hand_in_deck(play1)
             shuffle_player_deck(play1)
             draw_opening_hand(play1)
@@ -233,11 +263,11 @@ if play1.onThePlay:
     keeping = False
     # Now player 2 chooses
     while not keeping:
-        print("Do you want to keep your hand (Y or N),", play2.name,"?")
+        print("Do you want to keep your hand (Y or N),", play2.name, "?")
         yesorno = input()
         if yesorno == "Y":
             keeping = True
-        else: # Put cards from hand back into deck, shuffle deck, draw seven again
+        else:  # Put cards from hand back into deck, shuffle deck, draw seven again
             put_hand_in_deck(play2)
             shuffle_player_deck(play2)
             draw_opening_hand(play2)
@@ -267,5 +297,65 @@ else:
             draw_opening_hand(play1)
             print_player_hand(play1)
 
-
 # Now both players have hands they like, let's start the game
+
+# How to keep track of game state, which player's turn, which player has priority, which phase of turn are we in, life
+# totals, cards in hand, gy, ex, board state, triggers
+
+# Set turn to player who is OnThePlay
+# Player does not get to draw a card on the first turn of the game
+firstTurn = True
+gameNumber = 1
+playerTurn = play1
+if play2.onThePlay:
+    playerTurn = play2
+
+
+def untapAll(plyr):
+    for i in range(0, len(plyr.board)):
+        plyr.board[i].tapped = False
+
+
+def empty_mana(plyr):
+    plyr.C = 0
+    plyr.W = 0
+    plyr.U = 0
+    plyr.B = 0
+    plyr.R = 0
+    plyr.G = 0
+
+
+def takeTurn(plyr, firstturn):
+
+    empty_mana(plyr)
+    gmState = GameState.UNTAP
+    # for every card on the board on this player's side, untap it
+    untapAll(plyr)
+
+    gmState = GameState.UPKEEP
+    # Search board for upkeep triggers, perform them
+
+    gmState = GameState.DRAW
+    # Draw a card if it isn't the first turn of the game
+    if not firstturn:
+        plyr.draw_card()
+    firstturn = False
+    empty_mana(plyr)
+
+    gmState = GameState.MAIN1
+    # Now we are able to play lands from our hand
+    # Later, we will try to figure out what cards, deck, the opponent is playing/has in hand
+    # Later, we will determine the optimal card to play first before deciding which land to play
+    # We will also factor in the color requirements of the deck, such as RRW by turn 3
+    # Present player with options 1: play a land - get list of all lands in hand with numbered options, take key input
+    # 2 Tap a land for mana - get list of lands on board with numbered options, take key input
+    # 3 Play a spell - get list of spells in hand with numbered options, take key input, check if player has enough mana
+    # to pay for the spell
+
+
+
+    gmState = GameState.BEGINCOMBAT
+    empty_mana(plyr)
+
+# We will turn our game into a loop later on
+# def game_loop(plyr1, plyr2, gameNum):
