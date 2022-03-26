@@ -61,7 +61,7 @@ class Card:
         self.triggers = triggers
 
     def print_card(self):
-        print(self.name, self.type, self.cost, "T" if self.tapped else "U", (self.power, self.toughness) if self.type == CardType.CREATURE else '')
+        return (self.name, self.type, self.cost, "T" if self.tapped else "U", (self.power, self.toughness) if self.type == CardType.CREATURE else '')
 
 
 class Player:
@@ -117,7 +117,7 @@ def print_player_deck(playerX):
     print(playerX.name, "'s Deck")
     print_line_break()
     for j in range(0, len(playerX.deck)):
-        print(playerX.deck[j].name)
+        return playerX.deck[j].name
 
 
 def print_player_sideboard(playerX):
