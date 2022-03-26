@@ -50,6 +50,7 @@ class GameState(enum.Enum):
 
 
 class Card:
+    '''
     type = CardType.CREATURE
     cmc = 1
     cost = "R"
@@ -61,9 +62,10 @@ class Card:
     toughness = 2
     text = "Prowess"
     triggers = Triggers.PROWESS
-
+    id = 0
+    '''
     # instance attribute
-    def __init__(self, type, cmc, cost, name, tapped, strat, power, toughness, text, triggers):
+    def __init__(self, type, cmc, cost, name, tapped, strat, power, toughness, text, triggers, score):
         self.type = type
         self.cmc = cmc
         self.cost = cost
@@ -74,6 +76,7 @@ class Card:
         self.toughness = toughness
         self.text = text
         self.triggers = triggers
+        self.score = score
 
     def print_card(self):
         return (self.name, self.type, self.cost, "T" if self.tapped else "U",
@@ -91,6 +94,7 @@ class Player:
         self.graveyard = []
         self.exile = []
         self.board = []
+        self.spellList = []
         self.life = 20
         # Set mana in mana pool to 0 for each color
         self.R = 0
@@ -113,18 +117,21 @@ play2 = Player("Opponent")
 
 # Create some test cards
 lightningBolt = Card(CardType.INSTANT, 1, "R", "Lightning Bolt", False, DeckStrategy.OTHER, 0, 0,
-                     "Deal 3 damage to any target", Triggers.NA)
+                     "Deal 3 damage to any target", Triggers.NA, 0)
 monasterySwiftspear = Card(CardType.CREATURE, 1, "R", "Monastery Swiftspear", False, DeckStrategy.AGGRO, 1, 2,
-                           "Prowess", Triggers.PROWESS)
-mountain = Card(CardType.LAND, 0, "NA", "Mountain", False, DeckStrategy.AGGRO, 0, 0, "", Triggers.NA)
+                           "Prowess", Triggers.PROWESS, 0)
+mountain = Card(CardType.LAND, 0, "NA", "Mountain", False, DeckStrategy.AGGRO, 0, 0, "", Triggers.NA, 0)
 
 llanowarElves = Card(CardType.CREATURE, 1, "G", "Llanowar Elves", False, DeckStrategy.MIDRANGE, 1, 1, "T, Add G",
-                     Triggers.NA)
-forest = Card(CardType.LAND, 0, "NA", "Forest", False, DeckStrategy.MIDRANGE, 0, 0, "", Triggers.NA)
+                     Triggers.NA, 0)
+forest = Card(CardType.LAND, 0, "NA", "Forest", False, DeckStrategy.MIDRANGE, 0, 0, "", Triggers.NA, 0)
 preyUpon = Card(CardType.INSTANT, 1, "G", "Prey Upon", False, DeckStrategy.MIDRANGE, 0, 0,
-                "Target creature you control fights target creature", Triggers.NA)
+                "Target creature you control fights target creature", Triggers.NA, 0)
 
 # Add the cards to the deck
+# These ids will keep track of the cards in each player's deck as the game goes along
+playid1 = 0
+playid2 = 0
 for i in range(0, 20):
     play1.deck.append(copy.deepcopy(lightningBolt))
     play1.deck.append(copy.deepcopy(monasterySwiftspear))
@@ -237,7 +244,7 @@ def print_player_hand(playerH):
     print(playerH.name, "'s hand")
     print_line_break()
     for m in range(0, len(playerH.hand)):
-        print(playerH.hand[m].print_card())
+        print(m, playerH.hand[m].print_card())
 
 
 print_player_hand(play1)
@@ -325,6 +332,20 @@ def empty_mana(plyr):
     plyr.G = 0
 
 
+def print_battlefield(plyr1, plyr2):
+    print_line_break()
+    print(plyr1.name, "Battlefield")
+    print_line_break()
+    for obj in range(0, len(plyr1.board)):
+        print(plyr1.board[obj].name)
+
+    print_line_break()
+    print(plyr2.name, "Battlefield")
+    print_line_break()
+    for obj2 in range(0, len(plyr2.board)):
+        print(plyr2.board[obj2].name)
+
+
 def takeTurn(plyr, firstturn):
 
     empty_mana(plyr)
@@ -351,11 +372,36 @@ def takeTurn(plyr, firstturn):
     # 2 Tap a land for mana - get list of lands on board with numbered options, take key input
     # 3 Play a spell - get list of spells in hand with numbered options, take key input, check if player has enough mana
     # to pay for the spell
+    # Options: 1 Play land 2 Cast spell 3 Move to combat
+    print_battlefield(play1, play2)
+    playerAction = int(input("What would you like to do? 1 Play land 2 Cast spell 3 Move to combat"))
+    if playerAction == 1:
+        print("Open up land options menu, then continue")
+        print_player_hand(plyr)
+        landPicked = False
+        while not landPicked:
+            playerAction = int(input("Which land would you like to play?"))
+            for i in range(0, len(plyr.hand)):
+                if playerAction == i:
+                    if plyr.hand[i].type == CardType.LAND:
+                        plyr.board.append(plyr.hand.pop(i))
+                        landPicked = True
+                        break
+                    else:
+                        print("That is not a valid choice, try again")
+                        break
+                    # Need a way to cancel out if you have no lands in hand otherwise stuck
 
+    elif playerAction == 2:
+        print("Open up spell cast options menu, then continue")
+    elif playerAction == 3:
+        print("Move on to combat")
 
-
+    print_battlefield(play1, play2)
+    print_player_hand(play1)
     gmState = GameState.BEGINCOMBAT
     empty_mana(plyr)
 
 # We will turn our game into a loop later on
 # def game_loop(plyr1, plyr2, gameNum):
+takeTurn(play1, True)
