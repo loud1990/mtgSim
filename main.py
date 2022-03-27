@@ -374,28 +374,36 @@ def takeTurn(plyr, firstturn):
     # to pay for the spell
     # Options: 1 Play land 2 Cast spell 3 Move to combat
     print_battlefield(play1, play2)
-    playerAction = int(input("What would you like to do? 1 Play land 2 Cast spell 3 Move to combat"))
-    if playerAction == 1:
-        print("Open up land options menu, then continue")
-        print_player_hand(plyr)
-        landPicked = False
-        while not landPicked:
-            playerAction = int(input("Which land would you like to play?"))
-            for i in range(0, len(plyr.hand)):
-                if playerAction == i:
-                    if plyr.hand[i].type == CardType.LAND:
-                        plyr.board.append(plyr.hand.pop(i))
-                        landPicked = True
+    landPlayed = False
+    playerAction = 98
+    while not playerAction == 3:
+        playerAction = int(input("What would you like to do? 1 Play land 2 Cast spell 3 Move to combat"))
+        if playerAction == 1:
+            if landPlayed:
+                print("You may only play one land per turn")
+            else:
+                print("Open up land options menu, then continue")
+                print_player_hand(plyr)
+                landPicked = False
+                while not landPicked:
+                    landSelection = int(input("Which land would you like to play? Press 99 to cancel"))
+                    if landSelection == 99:
                         break
-                    else:
-                        print("That is not a valid choice, try again")
-                        break
-                    # Need a way to cancel out if you have no lands in hand otherwise stuck
+                    for i in range(0, len(plyr.hand)):
+                        if landSelection == i:
+                            if plyr.hand[i].type == CardType.LAND:
+                                plyr.board.append(plyr.hand.pop(i))
+                                landPicked = True
+                                landPlayed = True
+                                break
+                            else:
+                                print("That is not a valid choice, try again")
+                                break
 
-    elif playerAction == 2:
-        print("Open up spell cast options menu, then continue")
-    elif playerAction == 3:
-        print("Move on to combat")
+        elif playerAction == 2:
+            print("Open up spell cast options menu, then continue")
+        elif playerAction == 3:
+            print("Move on to combat")
 
     print_battlefield(play1, play2)
     print_player_hand(play1)
