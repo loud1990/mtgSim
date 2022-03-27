@@ -317,6 +317,8 @@ playerTurn = play1
 if play2.onThePlay:
     playerTurn = play2
 
+# Calculate deck mana requirements here for each player
+# Calulate knowledge each player has of the other player's deck here if it's not game 1
 
 def untapAll(plyr):
     for i in range(0, len(plyr.board)):
@@ -332,12 +334,18 @@ def empty_mana(plyr):
     plyr.G = 0
 
 
+def tap_all_lands(plyr):
+    for i in range(0, len(plyr.board)):
+        if plyr.board[i].type == CardType.LAND:
+            print("Choose what type of mana to produce")
+
+
 def print_battlefield(plyr1, plyr2):
     print_line_break()
     print(plyr1.name, "Battlefield")
     print_line_break()
     for obj in range(0, len(plyr1.board)):
-        print(plyr1.board[obj].name)
+        print(obj, plyr1.board[obj].name)
 
     print_line_break()
     print(plyr2.name, "Battlefield")
@@ -346,12 +354,12 @@ def print_battlefield(plyr1, plyr2):
         print(plyr2.board[obj2].name)
 
 
-def takeTurn(plyr, firstturn):
+def takeTurn(plyr1, plyr2, firstturn):
 
-    empty_mana(plyr)
+    empty_mana(plyr1)
     gmState = GameState.UNTAP
     # for every card on the board on this player's side, untap it
-    untapAll(plyr)
+    untapAll(plyr1)
 
     gmState = GameState.UPKEEP
     # Search board for upkeep triggers, perform them
@@ -359,9 +367,9 @@ def takeTurn(plyr, firstturn):
     gmState = GameState.DRAW
     # Draw a card if it isn't the first turn of the game
     if not firstturn:
-        plyr.draw_card()
+        plyr1.draw_card()
     firstturn = False
-    empty_mana(plyr)
+    empty_mana(plyr1)
 
     gmState = GameState.MAIN1
     # Now we are able to play lands from our hand
@@ -377,22 +385,22 @@ def takeTurn(plyr, firstturn):
     landPlayed = False
     playerAction = 98
     while not playerAction == 3:
-        playerAction = int(input("What would you like to do? 1 Play land 2 Cast spell 3 Move to combat"))
+        playerAction = int(input("What would you like to do? 1 Play land 2 Cast spell 3 Move to combat 4 tap land for mana"))
         if playerAction == 1:
             if landPlayed:
                 print("You may only play one land per turn")
             else:
                 print("Open up land options menu, then continue")
-                print_player_hand(plyr)
+                print_player_hand(plyr1)
                 landPicked = False
                 while not landPicked:
                     landSelection = int(input("Which land would you like to play? Press 99 to cancel"))
                     if landSelection == 99:
                         break
-                    for i in range(0, len(plyr.hand)):
+                    for i in range(0, len(plyr1.hand)):
                         if landSelection == i:
-                            if plyr.hand[i].type == CardType.LAND:
-                                plyr.board.append(plyr.hand.pop(i))
+                            if plyr1.hand[i].type == CardType.LAND:
+                                plyr1.board.append(plyr1.hand.pop(i))
                                 landPicked = True
                                 landPlayed = True
                                 break
@@ -404,12 +412,31 @@ def takeTurn(plyr, firstturn):
             print("Open up spell cast options menu, then continue")
         elif playerAction == 3:
             print("Move on to combat")
+        elif playerAction == 4:
+            print("Tap lands for mana")
+            print_battlefield(plyr1, plyr2)
+            print("W:", plyr1.W, "U:", plyr1.U, "B:", plyr1.B, "R:", plyr1.R, "G:", plyr1.G, "C:", plyr1.C)
+            landChoice = int(input("Press 99 to tap all lands, or press the land number to tap a single land:"))
+            if landChoice == 99:
+                tap_all_lands(plyr1)
+            else:
+                for i in range(0, len(plyr1.board)): # Check if choice is a land, check if land is tapped already, otherwise tap it and give the player the necessary mana
+                    if plyr1.board[i].type == CardType.LAND:
+                        if plyr1.board[i].tapped:
+                            print("This land is already tapped!")
+                        else:
+                            plyr1.board[i].tapped = True
+                            plyr1.R += 1
+                    else:
+                        print("This is not a valid land choice")
+
+
 
     print_battlefield(play1, play2)
     print_player_hand(play1)
     gmState = GameState.BEGINCOMBAT
-    empty_mana(plyr)
+    empty_mana(plyr1)
 
 # We will turn our game into a loop later on
 # def game_loop(plyr1, plyr2, gameNum):
-takeTurn(play1, True)
+takeTurn(play1, play2, True)
